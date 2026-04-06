@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SATARK - Operational Command</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    body, html {
+      margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Inter', sans-serif;
+      background-color: #050505; color: #fff; overflow: hidden;
+    }
+    
+    .bg-main {
+      position: absolute; inset: 0; opacity: 0.15; z-index: -1;
+      background: url('/frontend/assets/dashboard_bg.png') center/cover no-repeat;
+    }
+    
+    /* Premium Glass Panels */
+    .glass {
+      background: rgba(20, 20, 25, 0.65); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px;
+    }
+    
+    #map { width: 100%; height: 100%; border-radius: 12px; }
+    
+    .ticker-wrap {
+      width: 100%; overflow: hidden; white-space: nowrap; box-sizing: border-box;
+    }
+    .ticker {
+      display: inline-block; animation: ticker 25s linear infinite; padding-left: 100%;
+    }
+    @keyframes ticker {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
+    
+    .nav-item {
+      transition: all 0.2s; border-left: 3px solid transparent;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255, 255, 255, 0.05); border-left-color: #3b82f6;
+    }
+    
+    .input-premium {
+      background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); 
+      color: white; border-radius: 8px; padding: 8px 12px; font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
+    .input-premium:focus { outline: none; border-color: #3b82f6; }
+    
+    .btn-submit {
+      background: #3b82f6; color: white; border-radius: 8px; font-weight: 600;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+    .btn-submit:hover { background: #2563eb; box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  </style>
+</head>
+<body class="flex h-screen text-gray-100">
+
+  <!-- Check Auth -->
+  <script>
+    if (!localStorage.getItem('satark_token')) {
+      window.location.href = '/frontend/login.html';
+    }
+  </script>
+
+  <div class="bg-main"></div>
+
+  <!-- Sidebar -->
+  <div class="w-64 glass m-4 flex flex-col justify-between shadow-2xl">
+    <div>
+      <div class="p-6 border-b border-gray-800 flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+           <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.092 2.027-.27 3.015m-1.391 3.26a11.97 11.97 0 01-3.66 2.827" /></svg>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg leading-tight tracking-tight">SATARK</h2>
+          <p class="text-xs text-blue-400 font-semibold uppercase">Command Center</p>
+        </div>
+      </div>
+      
+      <div class="mt-4 flex flex-col gap-1 px-3">
+        <a href="/" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-gray-200">
+          <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+          Tactical Map
+        </a>
+        <a href="/frontend/criminals.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-gray-400 hover:text-gray-200">
+          <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+          Top Wanted
+        </a>
+        <a href="/frontend/emergency.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-gray-400 hover:text-gray-200">
+          <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          Emergency Dispatch
+        </a>
+        <a href="/frontend/places.html" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-gray-400 hover:text-gray-200">
+          <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          Suspicious Places
+        </a>
+      </div>
+    </div>
+    
+    <div class="p-6 border-t border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm" id="officer-initials"></div>
+        <div>
+          <div class="text-sm font-semibold text-white" id="officer-name">Loading...</div>
+          <div class="text-xs text-green-400" id="officer-rank">Online</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col py-4 pr-4 gap-4 h-full">
+    
+    <!-- Top HUD -->
+    <div class="glass flex items-center justify-between px-6 py-3 shrink-0">
+      <div class="flex items-center gap-4 w-2/3">
+        <span class="text-xs font-bold text-red-500 uppercase shrink-0 flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></span>Live Alerts</span>
+        <div class="ticker-wrap text-sm text-gray-300 font-medium">
+          <div class="ticker" id="live-ticker">Initializing ST-GCN Neural Risk Streams... Awaiting Sector Data...</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-xs text-gray-400 text-right">
+          <div id="sys-time" class="text-lg font-mono text-white">00:00:00</div>
+          <div>SYSTEM TIME</div>
+        </div>
+        <div class="px-4 py-2 rounded-lg bg-orange-500/20 border border-orange-500/50 text-orange-400 font-bold text-xs uppercase" id="threat-badge">
+          THREAT: ELEVATED
+        </div>
+      </div>
+    </div>
+
+    <!-- Map & Side Panel -->
+    <div class="flex-1 flex gap-4 min-h-0">
+      
+      <!-- War Map -->
+      <div class="glass flex-1 relative overflow-hidden flex flex-col p-1">
+        <div id="map" class="w-full h-full rounded-xl z-10"></div>
+        
+        <!-- Floating Controls over map -->
+        <div class="absolute top-4 left-4 z-[400] flex gap-2">
+          <select id="map-category" class="input-premium bg-black/80 backdrop-blur">
+            <option value="">All Categories</option>
+            <option value="Theft">Theft</option>
+            <option value="Assault">Assault</option>
+            <option value="Robbery">Robbery</option>
+            <option value="Burglary">Burglary</option>
+          </select>
+          <input type="text" id="map-search" class="input-premium bg-black/80 backdrop-blur w-48" placeholder="Search City...">
+        </div>
+      </div>
+
+      <!-- Right Panel: Field Reporting & Alerts -->
+      <div class="w-80 flex flex-col gap-4 overflow-y-auto pr-1">
+        
+        <!-- Secure Reporting -->
+        <div class="glass p-5 shrink-0">
+          <h3 class="text-sm font-bold uppercase mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Field Reporting
+          </h3>
+          <form id="report-form" class="flex flex-col gap-3">
+             <input type="text" id="rep-city" placeholder="Location/City" class="input-premium" required>
+             <select id="rep-category" class="input-premium appearance-none" required>
+                <option value="" disabled selected>Select Offense</option>
+                <option value="Theft">Theft</option>
+                <option value="Assault">Assault</option>
+                <option value="Robbery">Robbery</option>
+             </select>
+             <div class="flex gap-2">
+               <input type="number" step="any" id="rep-lat" placeholder="Latitude" class="input-premium w-1/2" required>
+               <input type="number" step="any" id="rep-lon" placeholder="Longitude" class="input-premium w-1/2" required>
+             </div>
+             
+             <!-- Evidence Mock -->
+             <label class="border border-dashed border-gray-600 rounded-lg p-3 text-center cursor-pointer hover:bg-white/5 transition flex items-center justify-center gap-2">
+               <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+               <span class="text-xs text-gray-400">Attach Evidence</span>
+               <input type="file" class="hidden">
+             </label>
+
+             <button type="submit" class="btn-submit py-2.5 mt-2">Submit to PostGIS</button>
+             <div id="rep-status" class="text-center text-xs mt-1 hidden"></div>
+          </form>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="glass p-5 flex flex-col flex-1 min-h-[300px]">
+          <h3 class="text-sm font-bold uppercase mb-4 text-red-400">Recent Alerts (Click to Fly)</h3>
+          <div class="flex-1 overflow-y-auto space-y-3" id="alerts-list">
+             <div class="text-xs text-gray-500 text-center py-4 animate-pulse">Syncing Alerts...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Identity load
+    const offName = localStorage.getItem('officer_name') || 'Unknown Officer';
+    const offRank = localStorage.getItem('officer_rank') || 'Patrol';
+    document.getElementById('officer-name').innerText = offName;
+    document.getElementById('officer-rank').innerText = offRank;
+    document.getElementById('officer-initials').innerText = offName.charAt(0);
+
+    // Clock
+    setInterval(() => document.getElementById('sys-time').innerText = new Date().toTimeString().split(' ')[0], 1000);
+
+    // Initializations
+    let map, clusterGroup;
+    document.addEventListener("DOMContentLoaded", () => {
+      initGisMap();
+      fetchDashboardData();
+    });
+
+    function initGisMap() {
+      map = L.map('map', { zoomControl: false }).setView([22.0, 79.0], 5);
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      clusterGroup = L.markerClusterGroup({
+        chunkedLoading: true,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false
+      });
+      map.addLayer(clusterGroup);
+
+      // Listeners
+      const search = document.getElementById('map-search');
+      search.addEventListener('keydown', e => { if(e.key==='Enter') loadMapData(search.value); });
+      document.getElementById('map-category').addEventListener('change', () => loadMapData(search.value));
+    }
+
+    async function loadMapData(state) {
+      clusterGroup.clearLayers();
+      let url = '/api/crimes?limit=600';
+      if(state) url += `&state=${encodeURIComponent(state)}`;
+      const cat = document.getElementById('map-category').value;
+      if(cat) url += `&category=${encodeURIComponent(cat)}`;
+
+      try {
+        const res = await fetch(url);
+        const geojson = await res.json();
+        
+        let alertsHtml = '';
+        let count = 0;
+
+        if (geojson.features) {
+           geojson.features.forEach(f => {
+             const lat = f.geometry.coordinates[1];
+             const lon = f.geometry.coordinates[0];
+             const catName = f.properties.category;
+             const m = L.circleMarker([lat, lon], { radius: 6, fillColor: catName === 'Theft' ? '#eab308' : '#ef4444', color: '#fff', weight: 1, fillOpacity: 0.8 });
+             clusterGroup.addLayer(m);
+
+             // Populate Recent alerts with first 10
+             if(count < 10) {
+               alertsHtml += `
+                 <div class="bg-white/5 border border-white/10 rounded-lg p-3 cursor-pointer hover:bg-white/10 transition" onclick="flyToMap(${lat}, ${lon})">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="font-bold text-xs ${catName === 'Theft' ? 'text-yellow-400' : 'text-red-400'}">${catName.toUpperCase()}</span>
+                      <span class="text-[10px] text-gray-500">${new Date(f.properties.timestamp).getHours()}:${new Date(f.properties.timestamp).getMinutes()}</span>
+                    </div>
+                    <div class="text-xs text-gray-300">City: ${f.properties.city}</div>
+                 </div>
+               `;
+               count++;
+             }
+           });
+        }
+        document.getElementById('alerts-list').innerHTML = alertsHtml || '<div class="text-xs text-gray-500">No active alerts.</div>';
+      } catch (err) { console.error(err); }
+    }
+
+    window.flyToMap = function(lat, lon) {
+      map.flyTo([lat, lon], 14, { duration: 1.5 });
+    };
+
+    async function fetchDashboardData() {
+      loadMapData("");
+      // Fetch AI Predict for Ticker and Polygons
+      try {
+        const res = await fetch('/api/predict');
+        const data = await res.json();
+        const next = data.next_prediction || {};
+        
+        // Ticker update
+        document.getElementById('live-ticker').innerText = `CRITICAL ALERT: High probability of ${next.category} in ${next.context.target}. Units mobilize. | ST-GCN Network Operational | Threat levels mapping active...`;
+        
+        // Threat Badge
+        const prob = Math.round((next.probability || 0) * 100);
+        const badge = document.getElementById('threat-badge');
+        if(prob > 70) {
+           badge.className = "px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-500 font-bold text-xs uppercase animate-pulse";
+           badge.innerText = "THREAT: CRITICAL";
+        }
+
+        // Draw a fake "AI Forecast Polygon" around the top city for visuals
+        if(data.hotspots && data.hotspots.length > 0) {
+           const hc = data.hotspots[0];
+           L.circle([hc.latitude, hc.longitude], {
+              color: 'red', fillColor: '#f03', fillOpacity: 0.2, radius: 15000
+           }).addTo(map).bindPopup("ST-GCN Projected Danger Zone");
+        }
+      } catch(e) { console.warn("Predict API Off"); }
+    }
+
+    // Report
+    document.getElementById('report-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const st = document.getElementById('rep-status');
+      st.classList.remove('hidden'); st.innerText = "Transmitting..."; st.className = "text-blue-400 text-xs mt-1 animate-pulse";
+      try {
+        const res = await fetch('/api/report_crime', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('satark_token') },
+          body: JSON.stringify({
+            city: document.getElementById('rep-city').value,
+            category: document.getElementById('rep-category').value,
+            latitude: parseFloat(document.getElementById('rep-lat').value),
+            longitude: parseFloat(document.getElementById('rep-lon').value),
+            state: document.getElementById('rep-city').value
+          })
+        });
+        if(res.ok) {
+          st.className = "text-green-400 text-xs mt-1"; st.innerText = "Securely logged to PostGIS.";
+          setTimeout(()=> { document.getElementById('report-form').reset(); st.classList.add('hidden'); loadMapData(""); }, 1500);
+        } else throw new Error("HTTP fails");
+      } catch(err) {
+        st.className = "text-red-400 text-xs mt-1"; st.innerText = "Upload failed.";
+      }
+    });
+  </script>
+</body>
+</html>

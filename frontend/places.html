@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SATARK - Suspicious Hotspots</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    .bg-main {
+      position: fixed;
+      inset: 0;
+      opacity: 0.15;
+      z-index: -1;
+      background: url('/frontend/assets/dashboard_bg.png') center/cover no-repeat;
+      filter: brightness(0.6);
+    }
+
+    .glass {
+      background: rgba(20, 20, 25, 0.65);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .list-card {
+      transition: transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+
+    .list-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen p-6 flex flex-col gap-6">
+
+  <div class="bg-main"></div>
+
+  <!-- Header -->
+  <div class="flex items-center justify-between glass px-8 py-5">
+    <div class="flex items-center gap-4">
+      <a href="/" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition">
+        <svg class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </a>
+      <div
+        class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white">SUSPICIOUS HOTSPOTS</h1>
+        <p class="text-xs text-orange-400 font-bold uppercase tracking-wider">AI Anomaly Detections</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid of Places -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="places-grid">
+    <!-- Filled by JS -->
+  </div>
+
+  <script>
+    const anomalies = [
+      { city: 'Lucknow', area: 'Sector C, Indira Nagar', reason: 'Unusual spike in encrypted network traffic corresponding to a 400% rise in late-night localized movement.', nearest_station: 'Indira Nagar Thana (0.8km)', risk: 'ELEVATED' },
+      { city: 'Delhi', area: 'Okhla Industrial Phase II', reason: 'ST-GCN flag: Serial structural anomalies matching previous stolen-vehicle depot operations.', nearest_station: 'Okhla Police Station (1.2km)', risk: 'HIGH' },
+      { city: 'Mumbai', area: 'Dharavi Slum Tract 4', reason: 'Cluster of 14 unreported assaults registered via emergency audio distress pings in 48hrs.', nearest_station: 'Dharavi Main Desk (0.4km)', risk: 'CRITICAL' },
+      { city: 'Bangalore', area: 'Electronic City Phase 1', reason: 'Pattern match: 9 recent grand theft auto occurrences within a localized 2km geofence.', nearest_station: 'Elec. City Police (2.0km)', risk: 'ELEVATED' },
+      { city: 'Kanpur', area: 'Chakeri Ward 9', reason: 'Geospatial link between multiple low-level burglaries pointing to an organized syndicate staging point.', nearest_station: 'Chakeri State Police (1.5km)', risk: 'MODERATE' }
+    ];
+
+    const grid = document.getElementById('places-grid');
+    anomalies.forEach(a => {
+
+      // Pick color based on risk
+      let colorClass = 'text-orange-400 border-orange-500/20'; /* default */
+      let bgPulse = 'bg-orange-500';
+      if (a.risk === 'CRITICAL') { colorClass = 'text-red-500 border-red-500/30'; bgPulse = 'bg-red-500 animate-pulse'; }
+      if (a.risk === 'MODERATE') { colorClass = 'text-yellow-400 border-yellow-500/20'; bgPulse = 'bg-yellow-400'; }
+
+      grid.innerHTML += `
+         <div class="glass p-6 list-card flex flex-col h-full border border-white/5">
+            <div class="flex justify-between items-start mb-4 border-b border-gray-800 pb-4">
+              <div>
+                 <h2 class="text-xl font-bold text-white mb-1">${a.area}</h2>
+                 <p class="text-sm text-gray-400 font-medium">${a.city}</p>
+              </div>
+              <div class="flex items-center gap-2 px-3 py-1 bg-black/40 rounded border ${colorClass}">
+                 <div class="w-2 h-2 rounded-full ${bgPulse}"></div>
+                 <span class="text-xs font-bold ${colorClass.split(' ')[0]}">${a.risk}</span>
+              </div>
+            </div>
+
+            <div class="flex-1 mb-6">
+              <h3 class="text-xs text-gray-500 font-bold tracking-widest uppercase mb-2">Detection Rationale</h3>
+              <p class="text-sm text-gray-300 leading-relaxed">${a.reason}</p>
+            </div>
+
+            <div class="bg-blue-900/10 border border-blue-500/20 p-4 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                 <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                 </div>
+                 <div>
+                    <h4 class="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Primary Dispatch</h4>
+                    <p class="text-sm text-blue-300 font-bold">${a.nearest_station}</p>
+                 </div>
+              </div>
+              <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition shadow-md">NOTIFY BASE</button>
+            </div>
+         </div>
+       `;
+    });
+  </script>
+</body>
+
+</html>
